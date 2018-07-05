@@ -1,0 +1,80 @@
+zookeeper:
+  image: wurstmeister/zookeeper
+  hostname: zookeeper
+  ports:
+    - "2181:2181"
+kafka:
+  image: wurstmeister/kafka
+  hostname: kafka
+  ports:
+    - "9092:9092"
+    - "9999:9999"
+  links: 
+    - zookeeper:zk
+  environment:
+    JMX_PORT: 9999  
+    KAFKA_ADVERTISED_PORT: 9092
+    KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    KAFKA_CREATE_TOPICS: "GNR:1:1"
+service:
+  build: ./kafka-proxy/
+  hostname: kafkaservice
+  command: java -jar target/kafka-proxy-0.0.1-SNAPSHOT.jar
+  ports:
+    - "9020:9020"
+  links:
+    - kafka
+kafka-manager:
+  image: sheepkiller/kafka-manager
+  ports:
+    - "9000:9000"
+  links: 
+    - kafka
+    - zookeeper
+  environment:
+    ZK_HOSTS: zookeeper:2181 
+consumer:
+  build: ./kafka-consumer/
+  command: java -Xmx1024m -Xms512m -jar target/kafka-consumer-0.0.1-SNAPSHOT.jar
+  ports:
+    - "8090:8090"
+  links:
+    - kafka
+    - zookeeper
+    - postgres
+    - sms
+postgres:
+  image: postgres
+  hostname: postgres
+  ports:
+    - "5432:5432"
+  environment:
+    POSTGRES_USER: docker
+    POSTGRES_PASSWORD: docker
+    POSTGRES_DB: elevate
+spark-consumer:
+  build: ./kafka-spark-consumer/
+  command: java -Xmx1024m -Xms512m -jar target/kafka-spark-consumer-0.0.1-SNAPSHOT-jar-with-dependencies.jar
+  ports:
+    - "4040:4040"
+  links:
+    - kafka
+    - zookeeper
+sms:
+  build: ./elevate-utils/
+  hostname: sms
+  command: java -jar target/elevate-utils-0.0.1-SNAPSHOT.jar
+  ports:
+    - "9010:9010"
+#producer:
+#  build: ./elevate-producer/
+#  command: java -jar target/elevate-producer-0.0.1-SNAPSHOT-jar-with-dependencies.jar
+#  links:
+#    - service
+#display:
+#   build: ./elevate-display/
+#   hostname: display
+#   ports:
+#    - "8080:8080"
+#   links:
+#   - postgres

@@ -1,0 +1,11 @@
+bin/
+*.class
+target/
+classes/
+build/
+.metadata/
+.test/
+webapp/script/core/
+webapp/script/event/
+webapp/script/widget/
+webapp/script/nls/resources.js
